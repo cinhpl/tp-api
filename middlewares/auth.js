@@ -1,10 +1,13 @@
-// Ce fichier contient les middleware relatif à l'authentification
+const jwt = require('jsonwebtoken');
 
-function authenticateUser(req, res, next){
-    console.log("L'utilisateur est-il connecté ?");
-    next();
-}
-
-module.exports = {
-    authenticateUser: authenticateUser
-}
+module.exports = (req, res, next) => {
+    try {
+        const token = req.headers.authorization.split(' ')[1];
+        const tokenControl = jwt.verify(token, process.env.JWT_SECRET);
+        const userId = tokenControl.user_id; 
+        req.auth = { userId: userId }; 
+        next();
+    } catch (error) {
+        res.status(401).json({ error: error || 'Unauthorized' });
+    }
+};

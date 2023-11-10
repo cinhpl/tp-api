@@ -13,6 +13,8 @@ require('./models/index.js');
 // Importation des routeurs
 const indexRouter = require('./routes/index.js');
 const productRouter = require('./routes/product.js');
+const tagRouter = require('./routes/tags.js');
+const usersRouter = require('./routes/users.js');
 
 const app = express();
 
@@ -22,6 +24,8 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 app.use('/', indexRouter);
-app.use('/product', productRouter)
+app.use('/product', productRouter);
+app.use('/tags', tagRouter);
+app.use('/users', usersRouter);
 
 module.exports = app;
