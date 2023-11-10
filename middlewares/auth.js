@@ -1,13 +1,21 @@
 const jwt = require('jsonwebtoken');
-
 module.exports = (req, res, next) => {
-    try {
-        const token = req.headers.authorization.split(' ')[1];
-        const tokenControl = jwt.verify(token, process.env.JWT_SECRET);
-        const userId = tokenControl.user_id; 
-        req.auth = { userId: userId }; 
-        next();
-    } catch (error) {
-        res.status(401).json({ error: error || 'Unauthorized' });
-    }
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    res.status(401).json({
+        status: 'fail',
+        message: 'Unauthorized!',
+      });
+  }
+  const token = authHeader.split(' ')[1];
+  try {
+    const user = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = user;
+    next();
+  } catch (error) {
+    res.status(401).json({
+        status: 'fail',
+        message: 'Unauthorized!',
+      });
+  }
 };

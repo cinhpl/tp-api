@@ -4,10 +4,10 @@ const jwt = require('jsonwebtoken');
 var express = require('express');
 var router = express.Router();
 
-const { User } = require('../models/index');
+const { Admin } = require('../models/index');
 
 router.post('/signup', async function(req, res) {
-  const { email, password, address } = req.body;
+  const { email, password } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ error: "Email and password empty" });
@@ -16,18 +16,17 @@ router.post('/signup', async function(req, res) {
   try {
     console.log("Before hashing");
     const hash = await bcrypt.hash(password, 10);
-    console.log("After hashing, before User.create");
-    const user = await User.create({
+    console.log("After hashing, before Admin.create");
+    const admin = await Admin.create({
       email: email,
       password: hash,
-      address: address
     });
-    console.log("After User.create");
+    console.log("After Admin.create");
 
     res.status(201).json({
       status: "Success",
       data: {
-        user,
+        admin,
       }
     });
   } catch (error) {
@@ -40,40 +39,24 @@ router.post('/signup', async function(req, res) {
 router.post('/login', async function(req, res) {
   const { email, password } = req.body;
   try {
-    const user = await User.findOne({
+    const admin = await Admin.findOne({
       where: {
         email: email,
       },
     });
-    if (!user) {
+    if (!admin) {
       return res.status(401).json({ error: "Email or password invalid" });
     }
-    const validation = await bcrypt.compare(password, user.password);
+    const validation = await bcrypt.compare(password, admin.password);
     if (!validation) {
       return res.status(401).json({ error: "Email or password invalid" });
     }
-    const token = jwt.sign({ email: user.email, role: 'user' }, process.env.JWT_SECRET, { expiresIn: '24h' });
-
+    const token = jwt.sign({ email: admin.email }, process.env.JWT_SECRET, { expiresIn: '24h' });
     res.status(200).json({ message: "Success", token: token });
   } catch (error) {
+    console.log(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
   
-router.get('/', async function (req, res) {
-    try {
-        await User.findAll({
-            where: { 
-                roleId: 2
-            }
-        }).then(users => {
-        console.log(users)
-    })
-    } catch (error) {
-        console.log(error);
-    }
-    
-})
-
 module.exports = router;
-

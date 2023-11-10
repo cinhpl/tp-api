@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('./_database');
 
-const User = sequelize.define('User', {
+const Admin = sequelize.define('Admin', {
     email: {
         type: DataTypes.STRING,
         required: true,
@@ -11,20 +11,12 @@ const User = sequelize.define('User', {
         type: DataTypes.STRING,
         required: true,
       }, 
-      address: {
-        type: DataTypes.STRING,
-      },
-      isAdmin: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false, 
-    },
+      
     }, {
       indexes: [
         {'unique': true, fields: ['email']}
       ]
-    }, 
-   
-    
-);
+    },
+)
 
-module.exports = User;
+module.exports = Admin;

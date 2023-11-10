@@ -8,4 +8,4 @@ const sequelizeInstance = new Sequelize(
     {host: 'localhost', 'dialect': 'mysql'}
 )
 
-module.exports = sequelizeInstance
+module.exports = sequelizeInstance;

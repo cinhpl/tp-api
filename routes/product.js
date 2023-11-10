@@ -9,7 +9,13 @@ const { Product } = require('../models');
 // Get all products
 router.get('/', async function(req, res){
     try {
-        const products = await Product.findAll();
+        const products = await Product.findAll({
+            include: { 
+                model: Tags,
+                through: 'ProductsTags',
+                as: 'tags'
+            }
+        });
         if (products.length > 0) {
              res.status(200).json({ message: "Success", data: products });
         } else {
@@ -58,14 +64,16 @@ router.post('/', async function (req, res) {
             stocks: stocks,
         });
 
-        // Find and add multiple tags
+        // Find and add multiple tags in array
         if (tagId && tagId.length > 0) {
+            if (!tagId) {
+                res.status(500).json({ message: "Tag not find" })
+            } 
             const tags = await Tags.findAll({
                 where: {
                     id: tagId,
                 },
             });
-
             await product.addTags(tags);
         }
 
