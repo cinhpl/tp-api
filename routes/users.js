@@ -66,6 +66,21 @@ router.post('/login', async function(req, res) {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+  
+router.get('/', async function (req, res) {
+    try {
+        await User.findAll({
+            where: { 
+                roleId: 2
+            }
+        }).then(users => {
+        console.log(users)
+    })
+    } catch (error) {
+        console.log(error);
+    }
+    
+})
 
 module.exports = router;
 

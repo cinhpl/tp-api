@@ -7,6 +7,9 @@ const { Op } = require('sequelize');
 // Par défaut, require ira chercher le fichier index.js
 const { Product } = require('../models');
 
+const authHeader = require('../middlewares/auth');
+const authorize = require('../middlewares/authorize');
+
 const getPagination = (page, size) => {
     const limit = size ? +size : 3;
     const offset = page ? page * limit : 0;
@@ -21,9 +24,6 @@ const getPagingData = (data, page, limit) => {
   
     return { totalItems, product, totalPages, currentPage };
   };
-
-const authHeader = require('../middlewares/auth');
-const authorize = require('../middlewares/authorize');
 
 // Get all products
 router.get('/', async function(req, res){
