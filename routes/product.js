@@ -6,6 +6,9 @@ const { Tags } = require('../models');
 // Par défaut, require ira chercher le fichier index.js
 const { Product } = require('../models');
 
+const authHeader = require('../middlewares/auth');
+const authorize = require('../middlewares/authorize');
+
 // Get all products
 router.get('/', async function(req, res){
     try {
@@ -21,6 +24,12 @@ router.get('/', async function(req, res){
         } else {
             res.status(404).json({ message: "Products not Found"});
         }
+        if (products.stocks > 0) {
+            res.status(200).json({ message: "Success", data: products});
+        } else {
+            res.status(404).json({ message: "Products not found"});
+        }
+
     } catch (error) {
         res.status(500).json({ message: error });
     }
@@ -53,7 +62,7 @@ router.get('/:id', async function (req, res) {
 });
 
 // Add product
-router.post('/', async function (req, res) {
+router.post('/', authHeader, authorize, async function (req, res) {
     try {
         const { name, price, description, stocks, tagId } = req.body;
 

@@ -15,7 +15,6 @@ const indexRouter = require('./routes/index.js');
 const productRouter = require('./routes/product.js');
 const tagRouter = require('./routes/tags.js');
 const usersRouter = require('./routes/users.js');
-const adminsRouter = require('./routes/admins.js');
 
 const app = express();
 
@@ -28,6 +27,5 @@ app.use('/', indexRouter);
 app.use('/product', productRouter);
 app.use('/tags', tagRouter);
 app.use('/users', usersRouter);
-app.use('/admins', adminsRouter);
 
 module.exports = app;
