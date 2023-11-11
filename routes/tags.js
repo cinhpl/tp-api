@@ -18,7 +18,7 @@ router.get('/', async function(req, res){
     }
 });
 
-// Get product by ID
+// Get tag by ID
 router.get('/:id', async function (req, res) {
     const id = req.params.id;
     try {
@@ -37,7 +37,7 @@ router.get('/:id', async function (req, res) {
     }
 });
 
-// Add product
+// Add tag
 router.post('/', async function (req, res) {
     try {
         const response = await Tags.create({

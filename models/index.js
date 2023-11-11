@@ -6,7 +6,6 @@ const User = require('./User');
 const ProductOrder = require('./ProductOrder');
 const Order = require('./Order');
 const Tags = require('./Tags');
-const Admin = require('./Admin');
 
 // Déclaration des relations
 Order.belongsToMany (Product, { through: ProductOrder });
@@ -17,7 +16,7 @@ User.belongsTo (Order);
 Product.belongsTo(Tags);
 
 // Synchronisation de la base
-sequelize.sync({alter: true});
+//sequelize.sync({alter: true});
 
 module.exports = {
     Product: Product,
@@ -25,5 +24,4 @@ module.exports = {
     ProductOrder: ProductOrder,
     Order: Order,
     Tags: Tags,
-    Admin: Admin,
 }

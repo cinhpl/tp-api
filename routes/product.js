@@ -1,29 +1,66 @@
 const express = require('express');
 const router = express.Router();
 const { Tags } = require('../models');
+const { Op } = require('sequelize');
 
 // Importation d'un modèle Sequelize dans une vue.
 // Par défaut, require ira chercher le fichier index.js
 const { Product } = require('../models');
 
+const getPagination = (page, size) => {
+    const limit = size ? +size : 3;
+    const offset = page ? page * limit : 0;
+  
+    return { limit, offset };
+  };
+
+const getPagingData = (data, page, limit) => {
+    const { count: totalItems, rows: product } = data;
+    const currentPage = page ? +page : 0;
+    const totalPages = Math.ceil(totalItems / limit);
+  
+    return { totalItems, product, totalPages, currentPage };
+  };
+
+const authHeader = require('../middlewares/auth');
+const authorize = require('../middlewares/authorize');
+
 // Get all products
 router.get('/', async function(req, res){
-    try {
-        const products = await Product.findAll({
-            include: { 
-                model: Tags,
-                through: 'ProductsTags',
-                as: 'tags'
-            }
-        });
-        if (products.length > 0) {
-             res.status(200).json({ message: "Success", data: products });
-        } else {
-            res.status(404).json({ message: "Products not Found"});
+    // Manage product per page and filter by category(tags)
+    const { page, size, tags } = req.query;
+    // Operator from sequelize
+    var condition = {
+        ...(tags ? { '$tags.tag$': { [Op.like]: `%${tags}%` } } : null),
+        stocks: {
+            [Op.not]: 0
         }
-    } catch (error) {
-        res.status(500).json({ message: error });
-    }
+    };
+
+    const { limit, offset } = getPagination(page, size);
+
+    // findAndCountAll to find products and get pagination
+    Product.findAndCountAll({ 
+        where: 
+            condition, 
+            limit, 
+            offset,
+        include: {
+            model: Tags,
+            through: 'ProductTags',
+            as: 'tags'
+        }
+        })
+        .then(data => {
+            const response = getPagingData(data, page, limit);
+            res.send(response);
+        })
+        .catch(err => {
+            res.status(500).send({
+                message:
+                err.message || "Some error occurred while retrieving products."
+            });
+        });
 });
 
 // Get product by ID
@@ -53,7 +90,7 @@ router.get('/:id', async function (req, res) {
 });
 
 // Add product
-router.post('/', async function (req, res) {
+router.post('/', authHeader, authorize, async function (req, res) {
     try {
         const { name, price, description, stocks, tagId } = req.body;
 
@@ -66,9 +103,6 @@ router.post('/', async function (req, res) {
 
         // Find and add multiple tags in array
         if (tagId && tagId.length > 0) {
-            if (!tagId) {
-                res.status(500).json({ message: "Tag not find" })
-            } 
             const tags = await Tags.findAll({
                 where: {
                     id: tagId,
@@ -91,7 +125,7 @@ router.post('/', async function (req, res) {
 });
 
 // Update product
-router.patch('/:id', async function(req, res) {
+router.patch('/:id', authHeader, authorize, async function(req, res) {
     try {
       const id = req.params.id;
       const update = req.body; 
@@ -120,7 +154,7 @@ router.patch('/:id', async function(req, res) {
   });
 
 // Delete product
-router.delete('/:id', async function (req, res) {
+router.delete('/:id', authHeader, authorize, async function (req, res) {
     const id = req.params.id;
     try {
         const product = await Product.destroy({
