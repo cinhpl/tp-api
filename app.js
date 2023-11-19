@@ -1,8 +1,9 @@
 // Configuration de express
 const express = require('express');
-const path = require('path');
+//const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
+//const bodyParser= require('body-parser');
 
 // Lecture du fichier .env
 require('dotenv').config()
@@ -15,6 +16,7 @@ const indexRouter = require('./routes/index.js');
 const productRouter = require('./routes/product.js');
 const tagRouter = require('./routes/tags.js');
 const usersRouter = require('./routes/users.js');
+const cartRouter = require('./routes/cart.js');
 
 const app = express();
 
@@ -23,9 +25,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
+// Router
 app.use('/', indexRouter);
 app.use('/product', productRouter);
 app.use('/tags', tagRouter);
 app.use('/users', usersRouter);
+app.use('/cart', cartRouter);
 
 module.exports = app;

@@ -3,13 +3,14 @@ const router = express.Router();
 
 const { Tags } = require('../models');
 
+const auth = require('../middlewares/authentification');
+
+// Get all tags
 router.get('/', async function(req, res){
     try {
         const tags = await Tags.findAll();
         if (tags.length > 0) {
-             res
-                .status(200)
-                .json({ message: "Success", data: tags });
+             res.status(200).json({ data: tags });
         } else {
             res.status(200).json({ message: "No tags found", data: [] });
         }
@@ -22,6 +23,7 @@ router.get('/', async function(req, res){
 router.get('/:id', async function (req, res) {
     const id = req.params.id;
     try {
+        // Find tag by id
         const tag = await tag.findOne({
             where: {
                 id
@@ -38,7 +40,7 @@ router.get('/:id', async function (req, res) {
 });
 
 // Add tag
-router.post('/', async function (req, res) {
+router.post('/', auth, async function (req, res) {
     try {
         const response = await Tags.create({
             tag: req.body.tag 
@@ -59,6 +61,5 @@ router.post('/', async function (req, res) {
         res.status(500).json({message: "Internal Server Error"});
     }
 });
-
 
 module.exports = router;

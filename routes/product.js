@@ -1,15 +1,15 @@
 const express = require('express');
 const router = express.Router();
+
 const { Tags } = require('../models');
 const { Op } = require('sequelize');
-
-// Importation d'un modèle Sequelize dans une vue.
-// Par défaut, require ira chercher le fichier index.js
 const { Product } = require('../models');
 
-const authHeader = require('../middlewares/auth');
-const authorize = require('../middlewares/authorize');
+// Import authentification middleware
+const auth = require('../middlewares/authentification');
+const validAdmin = require('../middlewares/validAdmin');
 
+// Manage pagination and limit
 const getPagination = (page, size) => {
     const limit = size ? +size : 3;
     const offset = page ? page * limit : 0;
@@ -17,17 +17,22 @@ const getPagination = (page, size) => {
     return { limit, offset };
   };
 
-const getPagingData = (data, page, limit) => {
-    const { count: totalItems, rows: product } = data;
+const getDatas = (data, page, limit) => {
+    const { 
+        count: totalItems, 
+        rows: product 
+    } = data;
     const currentPage = page ? +page : 0;
     const totalPages = Math.ceil(totalItems / limit);
   
     return { totalItems, product, totalPages, currentPage };
   };
 
-// Get all products
+  let countRequest = {};
+
+  // Get all products
 router.get('/', async function(req, res){
-    // Manage product per page and filter by category(tags)
+    // Manage product per page and filter by category
     const { page, size, tags } = req.query;
     // Operator from sequelize
     var condition = {
@@ -36,9 +41,9 @@ router.get('/', async function(req, res){
             [Op.not]: 0
         }
     };
-
+  
     const { limit, offset } = getPagination(page, size);
-
+  
     // findAndCountAll to find products and get pagination
     Product.findAndCountAll({ 
         where: 
@@ -50,23 +55,24 @@ router.get('/', async function(req, res){
             through: 'ProductTags',
             as: 'tags'
         }
-        })
-        .then(data => {
-            const response = getPagingData(data, page, limit);
-            res.send(response);
-        })
-        .catch(err => {
-            res.status(500).send({
-                message:
-                err.message || "Some error occurred while retrieving products."
-            });
-        });
+    })
+    .then(data => {
+        // Sort product by most requested
+        data.rows.sort((a, b) => (countRequest[b.id] || 0) - (countRequest[a.id] || 0 ));
+        const response = getDatas(data, page, limit);
+        res.send(response);
+    })
+    .catch(error => {
+        res.status(500).json({ message: error });
+    });
 });
-
-// Get product by ID
+  
+  // Get product by ID
 router.get('/:id', async function (req, res) {
+    // Get params id 
     const id = req.params.id;
     try {
+        // Find product by id and include array of tags
         const product = await Product.findOne({
             where: {
                 id
@@ -79,18 +85,18 @@ router.get('/:id', async function (req, res) {
         });
         if (!product) {
             res.status(404).json({ message: "Product not Found" });
-
         } else {
+            // Count number of request
+            countRequest[id] = (countRequest[id] || 0) + 1;
             res.send(product);
-        }
+          }
     } catch (error) {
-        console.log(error)
-        res.status(500).json({ message: error })
+        res.status(500).json({ message: error });
     }
 });
 
-// Add product
-router.post('/', authHeader, authorize, async function (req, res) {
+// Add product in db
+router.post('/', auth, validAdmin, async function (req, res) {
     try {
         const { name, price, description, stocks, tagId } = req.body;
 
@@ -110,51 +116,40 @@ router.post('/', authHeader, authorize, async function (req, res) {
             });
             await product.addTags(tags);
         }
-
-        const response = {
-            success: true,
-            data: product,
-            message: "Product added successfully",
-        };
-
-        res.status(201).json(response);
+        res.status(201).json({product, message: "Product added successfully" }); 
     } catch (error) {
-        console.log(error);
         res.status(500).json({ message: "Internal Server Error" });
     }
 });
 
 // Update product
-router.patch('/:id', authHeader, authorize, async function(req, res) {
+router.patch('/:id', auth, validAdmin, async function(req, res) {
     try {
-      const id = req.params.id;
-      const update = req.body; 
+        const id = req.params.id;
+        const update = req.body; 
   
-      Product.findByPk(id)
+    Product.findByPk(id)
         .then(product => {
-          if (!product) {
-            return res.status(404).send({
-              message: "Can't find product"
+            if (!product) {
+                return res.status(404).send({
+                message: "Product not found"
             });
-          }
-  
-          return product.update(update);
+            }
+            return product.update(update);
         })
         .then(updateProduct => {
-          res.send(updateProduct);
+            res.send(updateProduct);
         })
         .catch(err => {
-          res.status(500).send({
-            message: "Unable to update product"
-          });
+            res.status(500).send({ message: "Unable to update product" });
         });
     } catch(error) {
-      res.status(500).json({message: "Internal Server Error"});
+        res.status(500).json({message: "Internal Server Error"});
     }
-  });
+});
 
-// Delete product
-router.delete('/:id', authHeader, authorize, async function (req, res) {
+// Delete product from db
+router.delete('/:id', auth, validAdmin, async function (req, res) {
     const id = req.params.id;
     try {
         const product = await Product.destroy({
@@ -171,6 +166,5 @@ router.delete('/:id', authHeader, authorize, async function (req, res) {
         res.status(500).json({ message: "Unable to delete product"})
     }
 });
-
 
 module.exports = router;
